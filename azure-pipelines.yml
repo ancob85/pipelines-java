@@ -1,22 +1,71 @@
-# Maven
-# Build your Java project and run tests with Apache Maven.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+pool: 
 
-trigger:
-- main
+  name: Azure Pipelines 
 
-pool:
-  vmImage: ubuntu-latest
+variables: 
 
-steps:
-- task: Maven@3
-  inputs:
-    mavenPomFile: 'pom.xml'
-    mavenOptions: '-Xmx3072m'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.8'
-    jdkArchitectureOption: 'x64'
-    publishJUnitResults: true
-    testResultsFiles: '**/surefire-reports/TEST-*.xml'
-    goals: 'package'
+  SolutionName: ‘Logger’ 
+
+steps: 
+
+– task: microsoft-IsvExpTools.PowerPlatform-BuildTools.tool-installer.PowerPlatformToolInstaller@0 
+
+  displayName: ‘Power Platform Tool Installer ‘ 
+
+  inputs: 
+
+    PowerAppsAdminVersion: 2.0.137 
+
+    CrmSdkCoreToolsVersion: 9.1.0.90 
+
+ 
+
+– task: microsoft-IsvExpTools.PowerPlatform-BuildTools.export-solution.PowerPlatformExportSolution@0 
+
+  displayName: ‘Power Platform Export Solution ‘ 
+
+  inputs: 
+
+    authenticationType: PowerPlatformSPN 
+
+    PowerPlatformSPN: CRM967032 
+
+    SolutionName: ‘$(SolutionName)’ 
+
+    SolutionOutputFile: ‘$(Build.ArtifactStagingDirectory)\$(SolutionName).zip’ 
+
+ 
+
+– task: microsoft-IsvExpTools.PowerPlatform-BuildTools.unpack-solution.PowerPlatformUnpackSolution@0 
+
+  displayName: ‘Power Platform Unpack Solution ‘ 
+
+  inputs: 
+
+    SolutionInputFile: ‘$(Build.ArtifactStagingDirectory)\$(SolutionName).zip’ 
+
+    SolutionTargetFolder: ‘$(Build.SourcesDirectory)\$(SolutionName)’ 
+
+ 
+
+– script: | 
+
+   echo commit all changes 
+
+   git config user.email “anbaard@gmail.com” 
+
+   git config user.name “ancob85” 
+
+   git checkout main 
+
+   git add –all 
+
+   git commit -m “solution init” 
+
+   echo push code to new repo 
+
+   git -c http.extraheader=”AUTHORIZATION: bearer $(System.AccessToken)” push origin main 
+
+    
+
+  displayName: ‘Command Line Script’ 
